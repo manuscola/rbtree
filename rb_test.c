@@ -3,12 +3,7 @@
 #include <stdlib.h>
 #include<assert.h>
 
-
-#define SIZE 16
-
-
-#define INDENT_STEP  4
-
+#define SIZE 1600
 
 void padding ( char ch, int n )
 {
@@ -59,12 +54,14 @@ int main()
     int array[SIZE] = {0};
     for(i = 0;i<SIZE;i++)
     {
-        array[i] = rand()%10000;
+        array[i] = rand()%100000;
     	unsigned long long key = array[i];
-        rbtree_insert(tree,key,&array[i]);
-        print_tree(tree);
+        int ret  = rbtree_insert(tree,key,&array[i]);//-1 mean alloc node failed, 
+                                                     //-2 mean existed node with same key
+       // print_tree(tree);
         void * data = rbtree_lookup(tree,key);
-        assert(data == &array[i]);
+        if(ret == 0)
+            assert(data == &array[i]);
     }
     
 
@@ -72,7 +69,7 @@ int main()
     for(i = 0; i <SIZE;i+=2)
     {
         rbtree_remove(tree,array[i]);
-        print_tree(tree);
+        //print_tree(tree);
     }
     return 0;
 }

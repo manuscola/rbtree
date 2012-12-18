@@ -138,7 +138,7 @@ struct rbtree_node* rbtree_next(struct rbtree_node* node)
     }
 }
 
-struct rbtree_node* rbtree_createnode(unsigned long long  key, void* data)
+struct rbtree_node* rbtree_createnode(void *key, void* data)
 {
     struct rbtree_node* newnode = malloc(sizeof(struct rbtree_node));
     if(newnode == NULL)
@@ -152,7 +152,8 @@ struct rbtree_node* rbtree_createnode(unsigned long long  key, void* data)
     return newnode;
 }
 
-static inline int compare(unsigned long long key_a,unsigned long long key_b)
+/*
+static inline int compare(void* key_a,void* key_b)
 {
     if(key_a > key_b)
         return 1;
@@ -160,17 +161,17 @@ static inline int compare(unsigned long long key_a,unsigned long long key_b)
         return 0;
     else
         return -1;
-}
+}*/
 
-struct rbtree_node* do_lookup(unsigned long long key,
-        struct rbtree_node* root,
+struct rbtree_node* do_lookup(void* key,
+        struct rbtree* tree,
         struct rbtree_node** pparent)
 {
-    struct rbtree_node *current = root;
+    struct rbtree_node *current = tree->root;
 
     while(current)
     {
-        int ret = compare(current->key,key);
+        int ret = tree->compare(current->key,key);
         if(ret == 0 )
             return  current;
         else
@@ -189,17 +190,17 @@ struct rbtree_node* do_lookup(unsigned long long key,
 
 }
 
-void*  rbtree_lookup(struct rbtree* tree,unsigned long long key)
+void*  rbtree_lookup(struct rbtree* tree,void* key)
 {
     assert(tree != NULL) ;
     struct rbtree_node* node;
-    node = do_lookup(key,tree->root,NULL);
+    node = do_lookup(key,tree,NULL);
     return node == NULL ?NULL:node->data;
 }
 
-static void set_child(struct rbtree_node* node,struct rbtree_node* child)
+static void set_child(struct rbtree* tree,struct rbtree_node* node,struct rbtree_node* child)
 {
-    int ret = compare(node->key,child->key);
+    int ret = tree->compare(node->key,child->key);
     assert(ret != 0);
 
     if(ret > 0)
@@ -261,20 +262,25 @@ static void rotate_right(struct rbtree_node *node, struct rbtree *tree)
 
 
 
-struct rbtree* rbtree_init()
+struct rbtree* rbtree_init(rbtree_cmp_fn_t compare)
 {
     struct rbtree* tree = malloc(sizeof(struct rbtree));
     if(tree == NULL)
         return NULL;
     else
+    {
         tree->root = NULL;
+        tree->compare = compare;
+    }
+    
     return tree;
 }
 struct rbtree_node* __rbtree_insert(struct rbtree_node* node,struct rbtree *tree)
 {
-    struct rbtree_node* samenode, *parent;
+    struct rbtree_node* samenode=NULL;
+    struct rbtree_node*parent=NULL;
 
-    samenode = do_lookup(node->key,tree->root,&parent);
+    samenode = do_lookup(node->key,tree,&parent);
     if(samenode != NULL)
         return samenode;
 
@@ -286,7 +292,7 @@ struct rbtree_node* __rbtree_insert(struct rbtree_node* node,struct rbtree *tree
         tree->root = node;
     else
     {
-        set_child(parent,node);
+        set_child(tree,parent,node);
     }
 
     while((parent = get_parent(node)) != NULL && parent->color == RB_RED)
@@ -347,7 +353,7 @@ struct rbtree_node* __rbtree_insert(struct rbtree_node* node,struct rbtree *tree
     return NULL;
 }
 
-int  rbtree_insert(struct rbtree *tree, unsigned long long key,void* data)
+int  rbtree_insert(struct rbtree *tree, void*  key,void* data)
 {
     struct rbtree_node * node = rbtree_createnode(key,data);
     struct rbtree_node* samenode = NULL;
@@ -503,9 +509,9 @@ void __rbtree_remove(struct rbtree_node* node,struct rbtree* tree)
     free(node);
 }
 
-int  rbtree_remove(struct rbtree* tree,unsigned long long key)
+int  rbtree_remove(struct rbtree* tree,void *key)
 {
-    struct rbtree_node* node = do_lookup(key,tree->root,NULL);
+    struct rbtree_node* node = do_lookup(key,tree,NULL);
     if(node == NULL)
         return -1;
     else

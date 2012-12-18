@@ -13,17 +13,19 @@ typedef struct rbtree_node
     struct rbtree_node* left;
     struct rbtree_node* right;
     enum rb_color color;
-    unsigned long long  key;
+    void*  key;
     void *data;
 }rbtree_node;
 
+typedef int (*rbtree_cmp_fn_t)(void *key_a,  void *key_b);
 typedef struct rbtree
 {
     struct rbtree_node* root;
+    rbtree_cmp_fn_t compare; 
 }rbtree;
 
-struct rbtree* rbtree_init();
-int  rbtree_insert(struct rbtree *tree, unsigned long long key,void* data);
-void*  rbtree_lookup(struct rbtree* tree,unsigned long long key);
-int  rbtree_remove(struct rbtree* tree,unsigned long long key);
+struct rbtree* rbtree_init(rbtree_cmp_fn_t fn);
+int  rbtree_insert(struct rbtree *tree, void *key,void* data);
+void*  rbtree_lookup(struct rbtree* tree,void *key);
+int  rbtree_remove(struct rbtree* tree,void *key);
 #endif

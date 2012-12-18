@@ -3,37 +3,37 @@
 #include <stdlib.h>
 #include<assert.h>
 
-#define SIZE 1600
+#define SIZE 1600000
 
 void padding ( char ch, int n )
 {
-  int i;
+    int i;
 
-  for ( i = 0; i < n; i++ )
-    putchar ( ch );
+    for ( i = 0; i < n; i++ )
+        putchar ( ch );
 }
 
 void print_node ( struct rbtree_node *root, int level )
 {
 
-  if ( root == NULL ) 
-  {
-    padding ( '\t', level );
-    puts ( "NIL" );
-
-  }
-  else 
-  {
-    print_node ( root->right, level + 1 );
-    padding ( '\t', level );
-    if(root->color == RB_BLACK)
+    if ( root == NULL ) 
     {
-        printf ( "(%llu)\n", root->key );
+        padding ( '\t', level );
+        puts ( "NIL" );
+
     }
-    else
-       printf ( "%llu\n", root->key );
-    print_node ( root->left, level + 1 );
-  }
+    else 
+    {
+        print_node ( root->right, level + 1 );
+        padding ( '\t', level );
+        if(root->color == RB_BLACK)
+        {
+            printf ( "(%llu)\n", *(unsigned long long*)(root->key) );
+        }
+        else
+            printf ( "%llu\n",*(unsigned long long*)(root->key) );
+        print_node ( root->left, level + 1 );
+    }
 }
 
 void print_tree(struct rbtree* tree)
@@ -41,35 +41,56 @@ void print_tree(struct rbtree* tree)
     print_node(tree->root,0);
     printf("-------------------------------------------\n");
 }
+
+int compare(void* key_a,void* key_b)
+{
+    unsigned long long key_a_real = *(unsigned long long*) (key_a);
+    unsigned long long key_b_real = *(unsigned long long*) (key_b);
+    if(key_a_real > key_b_real)
+    {
+        return 1;
+    }
+    else if(key_a_real == key_b_real)
+    {
+       return 0;
+    }
+    else
+        return -1;
+}
 int main()
 {
-    struct rbtree* tree = rbtree_init();
+    struct rbtree* tree = rbtree_init(compare);
     if(tree == NULL)
     {
-    	fprintf(stderr,"malloc tree failed\n");
-    	return -1;
+        fprintf(stderr,"malloc tree failed\n");
+        return -1;
     }
 
     int i = 0;
-    int array[SIZE] = {0};
+    unsigned long long  * array = malloc(SIZE*sizeof(unsigned long long ));
+    if(array == NULL)
+    {
+        fprintf(stderr,"malloc failed\n");
+        return -1;
+    }
+
     for(i = 0;i<SIZE;i++)
     {
-        array[i] = rand()%100000;
-    	unsigned long long key = array[i];
-        int ret  = rbtree_insert(tree,key,&array[i]);//-1 mean alloc node failed, 
+        array[i] = rand()%10000;
+        int ret  = rbtree_insert(tree,&array[i],&array[i]);//-1 mean alloc node failed, 
                                                      //-2 mean existed node with same key
-       // print_tree(tree);
-        void * data = rbtree_lookup(tree,key);
+  //         print_tree(tree);
+        void * data = rbtree_lookup(tree,&array[i]);
         if(ret == 0)
             assert(data == &array[i]);
     }
-    
+
 
 
     for(i = 0; i <SIZE;i+=2)
     {
-        rbtree_remove(tree,array[i]);
-        //print_tree(tree);
+        rbtree_remove(tree,&array[i]);
+    //    print_tree(tree);
     }
     return 0;
 }

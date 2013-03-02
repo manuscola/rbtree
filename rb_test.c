@@ -4,8 +4,8 @@
 #include <assert.h>
 #include <time.h>
 
-#define SIZE 1600000
-
+#define SIZE 12
+typedef unsigned long long ULL;
 void padding ( char ch, int n )
 {
     int i;
@@ -29,10 +29,10 @@ void print_node ( struct rbtree_node *root, int level )
         padding ( '\t', level );
         if(root->color == RB_BLACK)
         {
-            printf ( "(%llu)\n", *(unsigned long long*)(root->key) );
+            printf ( "(%llu)\n", *(ULL*)(root->key) );
         }
         else
-            printf ( "%llu\n",*(unsigned long long*)(root->key) );
+            printf ( "%llu\n",*(ULL*)(root->key) );
         print_node ( root->left, level + 1 );
     }
 }
@@ -45,8 +45,8 @@ void print_tree(struct rbtree* tree)
 
 int compare(void* key_a,void* key_b)
 {
-    unsigned long long key_a_real = *(unsigned long long*) (key_a);
-    unsigned long long key_b_real = *(unsigned long long*) (key_b);
+    ULL key_a_real = *(ULL*) (key_a);
+    ULL key_b_real = *(ULL*) (key_b);
     if(key_a_real > key_b_real)
     {
         return 1;
@@ -57,6 +57,61 @@ int compare(void* key_a,void* key_b)
     }
     else
         return -1;
+
+}
+
+void  process_null_node(struct rbtree_node* node, int nullcount, FILE* stream)
+{
+        fprintf(stream, "    null%d [shape=hexagon];\n", nullcount);
+        fprintf(stream, "    %llu -> null%d;\n",*(ULL*)(node->key), nullcount);
+}
+void __tree2dot(struct rbtree_node* node,FILE* stream)
+{
+    static int  null_node_cnt = 0;
+    if(node->color == RB_BLACK)
+    {
+        fprintf(stream,"%llu [shape=box];\n",*(ULL*)(node->key));
+    }
+
+    if(node->left)
+    {
+        
+        fprintf(stream,"  %llu -> %llu;\n",*(ULL*)(node->key),*(ULL*)(node->left->key));
+        __tree2dot(node->left,stream);
+    }
+    else
+    {
+        process_null_node(node,null_node_cnt++,stream);
+    }
+    if(node->right)
+    {
+        fprintf(stream,"  %llu -> %llu;\n",*(ULL*)(node->key),*(ULL*)(node->right->key));
+        __tree2dot(node->right,stream);
+    }
+    else
+    {
+        process_null_node(node,null_node_cnt++,stream);
+    }
+}
+int tree2dot(struct rbtree* tree,char* filename)
+{
+    assert(tree != NULL && filename != NULL);
+    FILE* stream = fopen(filename,"w+");
+    if(stream == NULL)
+    {
+        fprintf(stderr, "open failed \n");
+        return -1;
+    }
+
+    fprintf(stream,"digraph {\n");
+    __tree2dot(tree->root,stream);
+
+
+    fprintf(stream,"}\n");
+    fclose(stream);
+
+    return 0;
+    
 }
 int main()
 {
@@ -69,40 +124,25 @@ int main()
     }
 
     int i = 0;
-    unsigned long long  * array = malloc(SIZE*sizeof(unsigned long long ));
+    ULL  * array = malloc(SIZE*sizeof(ULL ));
     if(array == NULL)
     {
         fprintf(stderr,"malloc failed\n");
         return -1;
     }
-    srand(time(NULL));
+ //   srand(time(NULL));
     for(i = 0;i<SIZE;i++)
     {
-        array[i] = rand();
+        array[i] = rand()%1000;
         ret  = rbtree_insert(tree,&array[i],&array[i]);//-1 mean alloc node failed, 
                                                      //-2 mean existed node with same key
-  //         print_tree(tree);
         void * data = rbtree_lookup(tree,&array[i]);
         if(ret == 0)
             assert(data == &array[i]);
-       /* else
-        {
-            fprintf(stderr," %d - %llu, same node \n",i,array[i]);
-        }*/
     }
 
-
-
-    for(i = 0; i <SIZE;i+=2)
-    {
-        ret = rbtree_remove(tree,&array[i]);
-        /*if(ret != 0)
-        {
-            fprintf(stderr,"remove failed (%d) %llu\n",i,array[i]);
-            return -2;
-        }*/
-    //    print_tree(tree);
-    }
+    print_tree(tree);
+    tree2dot(tree,"tree.dot");
     return 0;
 }
 

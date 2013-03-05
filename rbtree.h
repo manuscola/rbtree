@@ -9,11 +9,12 @@ enum rb_color
 
 typedef struct rbtree_node
 {
+
     struct rbtree_node* parent;
     struct rbtree_node* left;
     struct rbtree_node* right;
     enum rb_color color;
-    void*  key;
+    void*  key;//key
     void *data;
 }rbtree_node;
 

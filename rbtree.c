@@ -66,6 +66,7 @@ struct rbtree_node* sibling(rbtree_node* node)
 static inline rbtree_node* get_min(struct rbtree_node* node)
 {
     assert(node != NULL);
+	
     while(node->left)
     {
         node =  node->left;
@@ -194,6 +195,7 @@ void*  rbtree_lookup(struct rbtree* tree,void* key)
 {
     assert(tree != NULL) ;
     struct rbtree_node* node;
+	//this something like linux kernel
     node = do_lookup(key,tree,NULL);
     return node == NULL ?NULL:node->data;
 }
@@ -275,12 +277,17 @@ struct rbtree* rbtree_init(rbtree_cmp_fn_t compare)
     
     return tree;
 }
+/*
+	insert data function
+	and this is the real operation
+*/
 struct rbtree_node* __rbtree_insert(struct rbtree_node* node,struct rbtree *tree)
 {
     struct rbtree_node* samenode=NULL;
-    struct rbtree_node*parent=NULL;
+    struct rbtree_node* parent=NULL;
 
     samenode = do_lookup(node->key,tree,&parent);
+	//if existed, return it
     if(samenode != NULL)
         return samenode;
 
@@ -294,7 +301,7 @@ struct rbtree_node* __rbtree_insert(struct rbtree_node* node,struct rbtree *tree
     {
         set_child(tree,parent,node);
     }
-
+	
     while((parent = get_parent(node)) != NULL && parent->color == RB_RED)
     {
         struct rbtree_node* grandpa = get_parent(parent);//grandpa must be existed 
@@ -352,17 +359,26 @@ struct rbtree_node* __rbtree_insert(struct rbtree_node* node,struct rbtree *tree
     set_color(RB_BLACK,tree->root);
     return NULL;
 }
-
+/*
+	insert data to rbtree pointed by tree
+	tree: rbtree
+	key:
+	data:data to be inserted
+	@return:insert result
+*/
 int  rbtree_insert(struct rbtree *tree, void*  key,void* data)
 {
     struct rbtree_node * node = rbtree_createnode(key,data);
     struct rbtree_node* samenode = NULL;
+	//failed to create new node
     if(node == NULL)
         return -1;
     else
-        samenode = __rbtree_insert(node,tree);
+        samenode = __rbtree_insert(node,tree);//maybe try inserting
+	//aleary exited
     if(samenode != NULL)
         return -2;
+	//succeed
     return 0;
 }
 
@@ -388,6 +404,7 @@ void replace_node(struct rbtree* t, rbtree_node *oldn, rbtree_node* newn)
 
 void delete_case1(struct rbtree* tree, struct rbtree_node* node)
 {
+	//root
     if(node->parent == NULL)
         return ;
     else
@@ -396,8 +413,10 @@ void delete_case1(struct rbtree* tree, struct rbtree_node* node)
 
 void delete_case2(struct rbtree* tree, struct rbtree_node* node)
 {
+	//sibling is red
     if(get_color(sibling(node)) == RB_RED)
     {
+		//op
         node->parent->color = RB_RED;
         sibling(node)->color = RB_BLACK;
         if(node == node->parent->left)
@@ -485,26 +504,36 @@ void delete_case6(struct rbtree*  t, rbtree_node* n)
 }
 void __rbtree_remove(struct rbtree_node* node,struct rbtree* tree)
 {
+	
     struct rbtree_node *left = node->left;
     struct rbtree_node* right = node->right;
     struct rbtree_node* child = NULL;
+	//two children
     if(left != NULL && right != NULL )
     {
+		//find successor
         struct rbtree_node* next = get_min(right);
+		//take over "next" key and data
         node->key = next->key;
         node->data = next->data;
+		//node: node to be deleted, so next is the one
         node = next;
     }
-
+	//node has only child
     assert(node->left == NULL || node->right == NULL);
+	//find the child
     child = (node->right == NULL ? node->left : node->right);
+	//depth of black is important: p 5
     if(get_color(node) == RB_BLACK)
     {
+		//this color should be taken by others
+		
         set_color(get_color(child),node);
         delete_case1(tree,node);
     }
     replace_node(tree,node,child);
-    if(node->parent == NULL && child != NULL)//node is root,root should be black
+    if(node->parent == NULL && child != NULL)
+		//node is root,root should be black
         set_color(RB_BLACK,child);
     free(node);
 }
@@ -512,6 +541,7 @@ void __rbtree_remove(struct rbtree_node* node,struct rbtree* tree)
 int  rbtree_remove(struct rbtree* tree,void *key)
 {
     struct rbtree_node* node = do_lookup(key,tree,NULL);
+	//not existed
     if(node == NULL)
         return -1;
     else

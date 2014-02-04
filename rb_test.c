@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <time.h>
 
+//count of nodes
 #define SIZE 12
 typedef unsigned long long ULL;
 void padding ( char ch, int n )
@@ -134,15 +135,31 @@ int main()
     for(i = 0;i<SIZE;i++)
     {
         array[i] = rand()%1000;
-        ret  = rbtree_insert(tree,&array[i],&array[i]);//-1 mean alloc node failed, 
-                                                     //-2 mean existed node with same key
+        ret  = rbtree_insert(tree,&array[i],&array[i]);//-1 mean \
+			alloc node failed, 
+          	                                           //-2 mean \
+			existed node with same key
         void * data = rbtree_lookup(tree,&array[i]);
-        if(ret == 0)
+        if(ret == 0)//test if insert is successfully
             assert(data == &array[i]);
     }
-
+	
     print_tree(tree);
-    tree2dot(tree,"tree.dot");
+	//delete
+	struct rbtree_node *key = rbtree_lookup(tree, &array[1]);
+	if(key==NULL){
+		printf("node not existed");
+	}else{
+		int result = rbtree_remove( tree, key );
+		if(result==0){
+			printf("delete successfully\n");
+		}else{
+			printf("delete failed.\n");
+		}
+    	print_tree(tree);
+		
+    	tree2dot(tree,"tree.do");
+	}
     return 0;
 }
 
